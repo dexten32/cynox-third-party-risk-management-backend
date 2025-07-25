@@ -1,0 +1,103 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id            String  @id @default(cuid())
+  name          String
+  email         String  @unique
+  password      String
+  contactNumber String?
+
+  role               Role
+  verificationStatus VerificationStatus @default(PENDING)
+
+  client   Client? @relation(fields: [clientId], references: [id])
+  clientId String?
+
+  vendor Vendor?
+
+  createdAt DateTime @default(now())
+}
+
+model Client {
+  id   String @id @default(cuid())
+  name String // Allow duplicates if needed
+
+  users   User[] // Multiple users per client
+  vendors Vendor[] // Multiple vendors per client
+}
+
+model Vendor {
+  id     String @id @default(cuid())
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @unique // Each vendor has one user
+
+  client   Client @relation(fields: [clientId], references: [id])
+  clientId String
+
+  questionnaireStatus QuestionnaireStatus @default(INCOMPLETE)
+
+  questionnaire Questionnaire[]
+  summaries     Summary[]
+
+  createdAt DateTime @default(now())
+}
+
+model Questionnaire {
+  id       String @id @default(cuid())
+  vendor   Vendor @relation(fields: [vendorId], references: [id])
+  vendorId String
+
+  question   String
+  answerType AnswerType
+  fileUrl    String?
+  comment    String?
+
+  createdAt DateTime @default(now())
+}
+
+model Summary {
+  id       String @id @default(cuid())
+  vendor   Vendor @relation(fields: [vendorId], references: [id])
+  vendorId String
+
+  originalFileUrl String
+  parsedContent   String
+  createdAt       DateTime @default(now())
+}
+
+enum Role {
+  COMPANY
+  CLIENT
+  VENDOR
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AnswerType {
+  YES_FILE
+  NO_COMMENT
+}
+
+enum QuestionnaireStatus {
+  INCOMPLETE
+  COMPLETE
+}
