@@ -60,8 +60,8 @@ export const getUsersByRole = async (req: Request, res: Response) => {
 
     res.json({ clients, vendors });
   } catch (err) {
-    console.error("Error fetching users by role:", err);
-    res.status(500).json({ error: "Failed to fetch users" });
+    console.error("Error fetching clients/vendors:", err);
+    res.status(500).json({ error: "Failed to fetch clients/vendors" });
   }
 };
 
@@ -92,5 +92,34 @@ export const getUsersGrouped = async (req: Request, res: Response) => {
   } catch (err) {
     console.error("Error fetching grouped users:", err);
     res.status(500).json({ error: "Failed to fetch grouped users" });
+  }
+};
+
+// Get user by ID
+export const getUserById = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        contactNumber: true,
+        role: true,
+        verificationStatus: true,
+        // Add more fields if needed
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json(user);
+  } catch (err) {
+    console.error("Error fetching user by ID:", err);
+    res.status(500).json({ error: "Server error while fetching user" });
   }
 };
